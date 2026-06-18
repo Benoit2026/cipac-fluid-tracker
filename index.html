@@ -125,9 +125,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .spinner{display:inline-block;width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle;}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}.prog-wrap{display:none}.client-cards{grid-template-columns:1fr}}
+
+.login-screen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;}
+.login-box{background:rgba(255,255,255,0.97);border-radius:20px;padding:36px 32px;width:100%;max-width:360px;text-align:center;}
+.login-logo{height:48px;object-fit:contain;margin-bottom:20px;}
+.login-title{font-size:18px;font-weight:500;color:var(--navy);margin-bottom:6px;}
+.login-sub{font-size:13px;color:var(--text-sec);margin-bottom:24px;}
+.login-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;color:var(--text);outline:none;text-align:center;letter-spacing:0.05em;margin-bottom:12px;}
+.login-input:focus{border-color:var(--navy);}
+.login-btn{width:100%;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;transition:opacity .15s;}
+.login-btn:hover{opacity:.88;}
+.login-err{font-size:12px;color:var(--red);margin-top:8px;min-height:18px;}
+.login-bar{height:3px;background:linear-gradient(90deg,var(--navy) 85%,var(--green) 85%);border-radius:0 0 20px 20px;margin-top:20px;}
 </style>
 </head>
 <body>
+
+<div id="login-screen" class="login-screen">
+  <div class="login-box">
+    <img id="login-logo" style="height:48px;object-fit:contain;margin-bottom:20px;display:block;margin-left:auto;margin-right:auto;" alt="CIPAC">
+    <div class="login-title">Fluid Analysis</div>
+    <div class="login-sub">Suivi des actions CIPAC Services</div>
+    <input class="login-input" type="password" id="login-pwd" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')checkLogin()">
+    <button class="login-btn" onclick="checkLogin()">Connexion</button>
+    <div class="login-err" id="login-err"></div>
+    <div class="login-bar"></div>
+  </div>
+</div>
+
 <div class="header">
   <div class="header-logo">
     <img id="logo-cipac" style="height:36px;object-fit:contain;" alt="CIPAC">
@@ -217,6 +242,8 @@ window.onload=function(){
   document.getElementById('logo-cipac').src=LOGOS.cipac;
   document.getElementById('logo-prony').src=LOGOS.prony;
   document.getElementById('logo-nmc').src=LOGOS.nmc;
+  document.getElementById('login-logo').src=LOGOS.cipac;
+  initAuth();
 };
 var SB_URL='https://dfozzaboqedtecsyxrmy.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmb3p6YWJvcWVkdGVjc3l4cm15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NTExNDcsImV4cCI6MjA5NzMyNzE0N30.9KafvlOaVknQRO4O_gNe1L3m3V0KOFQLyuzVnBpUMls';
@@ -351,8 +378,34 @@ function openEdit(id){var a=allActions.find(function(x){return x.id===id;});if(!
 function closeModal(){document.getElementById('action-modal').style.display='none';}
 async function saveAction(){var sn=document.getElementById('m-sn').value.trim(),text=document.getElementById('m-action').value.trim();if(!sn||!text)return;var obj={sn:sn,text:text,point:document.getElementById('m-point').value.trim(),fa:document.getElementById('m-fa').value.trim(),prio:document.getElementById('m-prio').value,sev:document.getElementById('m-sev').value};try{if(editId){await api('PATCH','fa_actions?id=eq.'+editId,obj);toast('Action modifiee');}else{obj.status='todo';obj.archived=false;obj.comment='';obj.date=new Date().toLocaleDateString('fr-FR');await api('POST','fa_actions',obj);toast('Action ajoutee');}closeModal();loadAll();}catch(e){toast('Erreur: '+e.message);}}
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2800);}
-loadAll();
-setInterval(loadAll,15000);
+
+var APP_PWD = 'VOLVOfluidConnect-CIPAC2026!';
+var SESSION_KEY = 'cipac_auth';
+
+function checkLogin() {
+  var pwd = document.getElementById('login-pwd').value;
+  if(pwd === APP_PWD) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    document.getElementById('login-screen').style.display = 'none';
+    loadAll();
+  } else {
+    document.getElementById('login-err').textContent = 'Mot de passe incorrect';
+    document.getElementById('login-pwd').value = '';
+    document.getElementById('login-pwd').focus();
+    setTimeout(function(){ document.getElementById('login-err').textContent=''; }, 2500);
+  }
+}
+
+function initAuth() {
+  if(sessionStorage.getItem(SESSION_KEY) === '1') {
+    document.getElementById('login-screen').style.display = 'none';
+    loadAll();
+  } else {
+    setTimeout(function(){ document.getElementById('login-pwd').focus(); }, 100);
+  }
+}
+
+setInterval(function(){ if(sessionStorage.getItem(SESSION_KEY)==="1") loadAll(); },15000);
 </script>
 </body>
 </html>
