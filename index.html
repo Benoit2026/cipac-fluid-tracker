@@ -127,16 +127,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}.prog-wrap{display:none}.client-cards{grid-template-columns:1fr}}
 
 .login-screen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;}
-.login-box{background:rgba(255,255,255,0.97);border-radius:20px;padding:36px 32px;width:100%;max-width:360px;text-align:center;}
-.login-logo{height:48px;object-fit:contain;margin-bottom:20px;}
+.login-box{background:rgba(255,255,255,0.97);border-radius:20px;padding:36px 32px;width:100%;max-width:380px;text-align:center;}
 .login-title{font-size:18px;font-weight:500;color:var(--navy);margin-bottom:6px;}
 .login-sub{font-size:13px;color:var(--text-sec);margin-bottom:24px;}
-.login-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;color:var(--text);outline:none;text-align:center;letter-spacing:0.05em;margin-bottom:12px;}
+.user-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.user-btn{padding:12px 8px;border:1.5px solid var(--border);border-radius:10px;font-size:12px;font-weight:500;color:var(--text);background:var(--white);cursor:pointer;transition:all .15s;text-align:center;}
+.user-btn:hover{border-color:var(--navy);background:var(--navy-light);color:var(--navy);}
+.user-btn.selected{border-color:var(--navy);background:var(--navy);color:#fff;}
+.user-initial{width:32px;height:32px;border-radius:50%;background:var(--navy-light);color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin:0 auto 6px;}
+.user-btn.selected .user-initial{background:rgba(255,255,255,0.2);color:#fff;}
+.login-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;color:var(--text);outline:none;text-align:center;margin-bottom:12px;display:none;}
+.login-input.visible{display:block;}
 .login-input:focus{border-color:var(--navy);}
-.login-btn{width:100%;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;transition:opacity .15s;}
+.login-btn{width:100%;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;transition:opacity .15s;display:none;}
+.login-btn.visible{display:block;}
 .login-btn:hover{opacity:.88;}
 .login-err{font-size:12px;color:var(--red);margin-top:8px;min-height:18px;}
 .login-bar{height:3px;background:linear-gradient(90deg,var(--navy) 85%,var(--green) 85%);border-radius:0 0 20px 20px;margin-top:20px;}
+.user-header{display:none;align-items:center;gap:8px;background:var(--navy-light);border-radius:10px;padding:8px 12px;margin-bottom:8px;}
+.user-header.visible{display:flex;}
+.user-header-name{font-size:13px;font-weight:500;color:var(--navy);}
+.current-user{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.15);padding:5px 12px;border-radius:20px;margin-left:8px;}
+.current-user-name{color:#fff;font-size:12px;font-weight:500;}
 </style>
 </head>
 <body>
@@ -145,9 +157,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="login-box">
     <img id="login-logo" style="height:48px;object-fit:contain;margin-bottom:20px;display:block;margin-left:auto;margin-right:auto;" alt="CIPAC">
     <div class="login-title">Fluid Analysis</div>
-    <div class="login-sub">Suivi des actions CIPAC Services</div>
+    <div class="login-sub">Selectionnez votre nom puis entrez votre mot de passe</div>
+    <div class="user-grid">
+      <div class="user-btn" id="ubtn-0" onclick="selectUser(0)">
+        <div class="user-initial">DS</div>Donald<br>SOUOLOU
+      </div>
+      <div class="user-btn" id="ubtn-1" onclick="selectUser(1)">
+        <div class="user-initial">TM</div>Teophane<br>MATHELON
+      </div>
+      <div class="user-btn" id="ubtn-2" onclick="selectUser(2)">
+        <div class="user-initial">FT</div>Frederick<br>TRAN
+      </div>
+      <div class="user-btn" id="ubtn-3" onclick="selectUser(3)">
+        <div class="user-initial">SS</div>Samantha<br>SUMU
+      </div>
+    </div>
     <input class="login-input" type="password" id="login-pwd" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')checkLogin()">
-    <button class="login-btn" onclick="checkLogin()">Connexion</button>
+    <button class="login-btn" id="login-btn" onclick="checkLogin()">Connexion</button>
     <div class="login-err" id="login-err"></div>
     <div class="login-bar"></div>
   </div>
@@ -161,6 +187,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div style="display:flex;align-items:center;gap:8px">
     <button class="back-btn" id="back-btn" onclick="goHome()">&#8592; Accueil</button>
     <div class="admin-badge" id="admin-badge"><span>&#9733; Admin</span><button class="logout-btn" onclick="logout()">&#10005;</button></div>
+    <div class="current-user" id="current-user-badge" style="display:none">
+      <span class="current-user-name" id="current-user-name"></span>
+    </div>
     <div class="live-badge" onclick="openPinModal()"><div class="live-dot" id="live-dot"></div><span class="live-text" id="live-text">Temps reel</span></div>
   </div>
 </div>
@@ -333,7 +362,7 @@ function render(){
       var chkCls='chk'+(isDone?' checked':'')+(locked?' locked':'')+(isDone&&isAdmin?' admin-unlock':'');
       var chkClk=locked?'showLockMsg()':'toggleDone('+a.id+')';
       var archBtn=isAdmin?'<button class="icon-btn" onclick="toggleArchive('+a.id+')">&#128193;</button>':'';
-      return '<div class="action-row'+(isDone?' done':'')+'" id="row-'+a.id+'"><div class="'+chkCls+'" onclick="'+chkClk+'" role="checkbox"></div><div class="action-body"><div class="action-text">'+a.text+'</div><div class="action-meta"><span class="chip">'+(a.point||'')+'</span><span class="chip">'+(a.fa||'')+'</span><span class="chip">'+(a.date||'')+'</span><span class="prio '+(a.prio||'med')+'">'+prioLabel(a.prio)+'</span></div>'+(isDone&&a.done_at?'<div class="done-info">&#10003; Validee le '+a.done_at+'</div>':'')+(hasCmt?'<div class="comment-display">&#128172; '+a.comment+'</div>':'')+'</div><div class="action-btns"><button class="icon-btn'+(hasCmt?' on':'')+'" onclick="openComment('+a.id+')">&#128172;</button><button class="icon-btn" onclick="openEdit('+a.id+')">&#9998;</button>'+archBtn+'</div></div>';
+      return '<div class="action-row'+(isDone?' done':'')+'" id="row-'+a.id+'"><div class="'+chkCls+'" onclick="'+chkClk+'" role="checkbox"></div><div class="action-body"><div class="action-text">'+a.text+'</div><div class="action-meta"><span class="chip">'+(a.point||'')+'</span><span class="chip">'+(a.fa||'')+'</span><span class="chip">'+(a.date||'')+'</span><span class="prio '+(a.prio||'med')+'">'+prioLabel(a.prio)+'</span></div>'+(isDone&&a.done_at?'<div class="done-info">&#10003; Validee le '+a.done_at+(a.validated_by?' par '+a.validated_by:'')+'</div>':'')+(hasCmt?'<div class="comment-display">&#128172; '+a.comment+'</div>':'')+'</div><div class="action-btns"><button class="icon-btn'+(hasCmt?' on':'')+'" onclick="openComment('+a.id+')">&#128172;</button><button class="icon-btn" onclick="openEdit('+a.id+')">&#9998;</button>'+archBtn+'</div></div>';
     }).join('');
     return '<div class="machine-block" id="blk-'+sid+'"><div class="machine-header" onclick="toggleBlock('+JSON.stringify(sid)+')"><span class="machine-sn">'+sn+'</span><span class="badge '+worst+'">'+sevLabel(worst)+'</span><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%"></div></div><span class="prog-text">'+done+'/'+total+' validees</span></div><span class="chevron">&#8964;</span></div><div class="actions-list">'+rowsHtml+'</div></div>';
   }).join('');
@@ -345,7 +374,8 @@ async function toggleDone(id){
   var a=allActions.find(function(x){return x.id===id;});if(!a)return;
   if(a.status==='done'&&!isAdmin){showLockMsg();return;}
   var ns=a.status==='done'?'todo':'done',da=ns==='done'?new Date().toLocaleDateString('fr-FR'):null;
-  try{await api('PATCH','fa_actions?id=eq.'+id,{status:ns,done_at:da});a.status=ns;a.done_at=da;render();updateHomeStats();toast(ns==='done'?'Action validee':'Action rouverte');}
+  var vby=ns==='done'?currentUser:'';
+  try{await api('PATCH','fa_actions?id=eq.'+id,{status:ns,done_at:da,validated_by:vby});a.status=ns;a.done_at=da;a.validated_by=vby;render();updateHomeStats();toast(ns==='done'?'Action validee':'Action rouverte');}
   catch(e){toast('Erreur: '+e.message);}
 }
 async function toggleArchive(id){
@@ -379,29 +409,56 @@ function closeModal(){document.getElementById('action-modal').style.display='non
 async function saveAction(){var sn=document.getElementById('m-sn').value.trim(),text=document.getElementById('m-action').value.trim();if(!sn||!text)return;var obj={sn:sn,text:text,point:document.getElementById('m-point').value.trim(),fa:document.getElementById('m-fa').value.trim(),prio:document.getElementById('m-prio').value,sev:document.getElementById('m-sev').value};try{if(editId){await api('PATCH','fa_actions?id=eq.'+editId,obj);toast('Action modifiee');}else{obj.status='todo';obj.archived=false;obj.comment='';obj.date=new Date().toLocaleDateString('fr-FR');await api('POST','fa_actions',obj);toast('Action ajoutee');}closeModal();loadAll();}catch(e){toast('Erreur: '+e.message);}}
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2800);}
 
-var APP_PWD = 'VOLVOfluidConnect-CIPAC2026!';
 var SESSION_KEY = 'cipac_auth';
+var SESSION_USER = 'cipac_user';
+var USERS = [
+  {name:'Donald SOUOLOU',   initials:'DS', pwd:'Donald2026'},
+  {name:'Teophane MATHELON',initials:'TM', pwd:'Teophane2026'},
+  {name:'Frederick TRAN',   initials:'FT', pwd:'Frederick2026'},
+  {name:'Samantha SUMU',    initials:'SS', pwd:'Samantha2026'}
+];
+var selectedUserIdx = -1;
+var currentUser = '';
+
+function selectUser(idx) {
+  selectedUserIdx = idx;
+  document.querySelectorAll('.user-btn').forEach(function(b,i){ b.classList.toggle('selected',i===idx); });
+  document.getElementById('login-pwd').classList.add('visible');
+  document.getElementById('login-btn').classList.add('visible');
+  setTimeout(function(){ document.getElementById('login-pwd').focus(); },100);
+  document.getElementById('login-err').textContent='';
+  document.getElementById('login-pwd').value='';
+}
 
 function checkLogin() {
+  if(selectedUserIdx<0){ document.getElementById('login-err').textContent='Selectionnez un utilisateur'; return; }
   var pwd = document.getElementById('login-pwd').value;
-  if(pwd === APP_PWD) {
-    sessionStorage.setItem(SESSION_KEY, '1');
-    document.getElementById('login-screen').style.display = 'none';
+  var user = USERS[selectedUserIdx];
+  if(pwd === user.pwd) {
+    sessionStorage.setItem(SESSION_KEY,'1');
+    sessionStorage.setItem(SESSION_USER, user.name);
+    currentUser = user.name;
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('current-user-badge').style.display='flex';
+    document.getElementById('current-user-name').textContent=user.name;
     loadAll();
   } else {
-    document.getElementById('login-err').textContent = 'Mot de passe incorrect';
-    document.getElementById('login-pwd').value = '';
+    document.getElementById('login-err').textContent='Mot de passe incorrect';
+    document.getElementById('login-pwd').value='';
     document.getElementById('login-pwd').focus();
-    setTimeout(function(){ document.getElementById('login-err').textContent=''; }, 2500);
+    setTimeout(function(){ document.getElementById('login-err').textContent=''; },2500);
   }
 }
 
 function initAuth() {
-  if(sessionStorage.getItem(SESSION_KEY) === '1') {
-    document.getElementById('login-screen').style.display = 'none';
+  var saved = sessionStorage.getItem(SESSION_KEY);
+  var savedUser = sessionStorage.getItem(SESSION_USER);
+  if(saved==='1' && savedUser) {
+    currentUser = savedUser;
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('current-user-badge').style.display='flex';
+    document.getElementById('current-user-name').textContent=savedUser;
     loadAll();
-  } else {
-    setTimeout(function(){ document.getElementById('login-pwd').focus(); }, 100);
   }
 }
 
