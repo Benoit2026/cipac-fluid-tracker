@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIPAC — Suivi Fluid Analysis</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --navy: #002864;
+    --navy-med: #003C78;
+    --navy-light: #E8EDF5;
+    --green: #8CB414;
+    --green-light: #F2F7E1;
+    --red: #A32D2D;
+    --red-light: #FCEBEB;
+    --amber: #854F0B;
+    --amber-light: #FAEEDA;
+    --ok: #3B6D11;
+    --ok-light: #EAF3DE;
+    --gray: #444441;
+    --border: #C8D0DC;
+    --bg: #F8F7F3;
+    --white: #FFFFFF;
+    --text: #2C2C2A;
+    --text-sec: #888780;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* Header */
+  .header { background: var(--navy); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .header-logo { display: flex; align-items: center; gap: 12px; }
+  .logo-mark { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+  .logo-mark svg { width: 32px; height: 32px; }
+  .header-title { color: #fff; font-size: 15px; font-weight: 500; }
+  .header-sub { color: rgba(255,255,255,0.55); font-size: 12px; }
+  .header-bar { height: 3px; background: linear-gradient(90deg, var(--navy) 85%, var(--green) 85%); }
+  .live-badge { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .live-text { color: rgba(255,255,255,0.8); font-size: 11px; font-weight: 500; }
+
+  /* Layout */
+  .container { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px; }
+  .stat { background: var(--white); border-radius: 10px; border: 0.5px solid var(--border); padding: 12px 14px; }
+  .stat-label { font-size: 11px; color: var(--text-sec); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+  .stat-val { font-size: 22px; font-weight: 500; }
+  .s-total { color: var(--navy); }
+  .s-todo { color: var(--red); }
+  .s-progress { color: var(--amber); }
+  .s-done { color: var(--ok); }
+
+  /* Filters */
+  .toolbar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .fbtn { padding: 6px 14px; border: 0.5px solid var(--border); border-radius: 20px; font-size: 12px; cursor: pointer; background: var(--white); color: var(--text-sec); transition: all .15s; }
+  .fbtn.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .fbtn:hover:not(.on) { background: var(--navy-light); }
+  .search { flex: 1; min-width: 160px; max-width: 240px; padding: 6px 12px; border: 0.5px solid var(--border); border-radius: 20px; font-size: 12px; background: var(--white); color: var(--text); outline: none; }
+  .search:focus { border-color: var(--navy); }
+  .add-btn { margin-left: auto; display: flex; align-items: center; gap: 6px; padding: 7px 16px; background: var(--navy); color: #fff; border: none; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; transition: opacity .15s; }
+  .add-btn:hover { opacity: .88; }
+
+  /* Machine blocks */
+  .machine-block { background: var(--white); border-radius: 12px; border: 0.5px solid var(--border); margin-bottom: 12px; overflow: hidden; }
+  .machine-header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: pointer; user-select: none; background: var(--white); transition: background .15s; }
+  .machine-header:hover { background: var(--navy-light); }
+  .machine-sn { font-size: 14px; font-weight: 500; color: var(--navy); }
+  .prog-wrap { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .prog-bar { height: 5px; background: var(--border); border-radius: 3px; width: 70px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 3px; background: var(--ok); transition: width .4s; }
+  .prog-text { font-size: 11px; color: var(--text-sec); min-width: 52px; text-align: right; }
+  .chevron { font-size: 13px; color: var(--text-sec); transition: transform .2s; margin-left: 4px; }
+  .collapsed .chevron { transform: rotate(-90deg); }
+  .collapsed .actions-list { display: none; }
+
+  /* Badge */
+  .badge { display: inline-flex; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+  .badge.ab { background: var(--red-light); color: var(--red); }
+  .badge.mo { background: var(--amber-light); color: var(--amber); }
+  .badge.ok { background: var(--ok-light); color: var(--ok); }
+
+  /* Action rows */
+  .actions-list { border-top: 0.5px solid var(--border); }
+  .action-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 16px; border-bottom: 0.5px solid var(--border); transition: background .15s; }
+  .action-row:last-child { border-bottom: none; }
+  .action-row:hover { background: #FAFAF8; }
+  .action-row.done { opacity: .6; }
+  .chk { width: 20px; height: 20px; border: 1.5px solid var(--border); border-radius: 5px; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; margin-top: 1px; }
+  .chk:hover { border-color: var(--ok); }
+  .chk.checked { background: var(--ok); border-color: var(--ok); }
+  .chk.checked::after { content:''; display:block; width:5px; height:9px; border:2px solid #fff; border-top:none; border-left:none; transform:rotate(45deg) translate(-1px,-1px); }
+  .action-body { flex: 1; min-width: 0; }
+  .action-text { font-size: 13px; color: var(--text); line-height: 1.45; }
+  .action-row.done .action-text { text-decoration: line-through; color: var(--text-sec); }
+  .action-meta { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; align-items: center; }
+  .chip { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-sec); background: var(--bg); padding: 2px 8px; border-radius: 4px; border: 0.5px solid var(--border); }
+  .prio { display: inline-flex; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; }
+  .prio.high { background: var(--red-light); color: var(--red); }
+  .prio.med { background: var(--amber-light); color: var(--amber); }
+  .prio.low { background: var(--ok-light); color: var(--ok); }
+  .done-info { font-size: 11px; color: var(--ok); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+  .action-btns { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+  .vbtn { padding: 4px 10px; font-size: 11px; font-weight: 500; border: 0.5px solid var(--border); border-radius: 6px; cursor: pointer; background: var(--white); color: var(--text-sec); transition: all .15s; white-space: nowrap; }
+  .vbtn:hover { background: var(--ok-light); border-color: var(--ok); color: var(--ok); }
+  .vbtn.undo:hover { background: var(--red-light); border-color: var(--red); color: var(--red); }
+  .vbtn.progress-btn:hover { background: var(--amber-light); border-color: var(--amber); color: var(--amber); }
+
+  /* Modal */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+  .modal { background: var(--white); border-radius: 14px; padding: 20px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
+  .modal h3 { font-size: 15px; font-weight: 500; color: var(--navy); margin-bottom: 14px; }
+  .modal label { font-size: 12px; color: var(--text-sec); display: block; margin-bottom: 3px; margin-top: 10px; }
+  .modal input, .modal select, .modal textarea { width: 100%; padding: 7px 10px; border: 0.5px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text); background: var(--white); outline: none; }
+  .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--navy); }
+  .modal textarea { height: 70px; resize: vertical; }
+  .modal-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .btn-cancel { padding: 8px 16px; font-size: 13px; border: 0.5px solid var(--border); border-radius: 8px; cursor: pointer; background: var(--white); color: var(--text-sec); }
+  .btn-save { padding: 8px 18px; font-size: 13px; font-weight: 500; border: none; border-radius: 8px; cursor: pointer; background: var(--navy); color: #fff; transition: opacity .15s; }
+  .btn-save:hover { opacity: .88; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--navy); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 500; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 200; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+
+  /* Loading */
+  .loading { text-align: center; padding: 3rem; color: var(--text-sec); font-size: 14px; }
+  .spinner { display: inline-block; width: 22px; height: 22px; border: 2px solid var(--border); border-top-color: var(--navy); border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Empty */
+  .empty { text-align: center; padding: 2.5rem; color: var(--text-sec); font-size: 13px; }
+
+  @media(max-width:600px) {
+    .stats { grid-template-columns: repeat(2,1fr); }
+    .prog-wrap { display: none; }
+    .header-sub { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="40" rx="2" fill="#8CB414"/>
+        <rect x="20" width="20" height="40" rx="2" fill="white" opacity="0.9"/>
+        <polygon points="8,8 8,32 20,20" fill="white"/>
+      </svg>
+    </div>
+    <div>
+      <div class="header-title">CIPAC Services</div>
+      <div class="header-sub">Fluid Analysis — Suivi des actions</div>
+    </div>
+  </div>
+  <div class="live-badge">
+    <div class="live-dot"></div>
+    <span class="live-text">Temps réel</span>
+  </div>
+</div>
+<div class="header-bar"></div>
+
+<div class="container">
+  <div class="stats" id="stats">
+    <div class="stat"><div class="stat-label">Total</div><div class="stat-val s-total">—</div></div>
+    <div class="stat"><div class="stat-label">À faire</div><div class="stat-val s-todo">—</div></div>
+    <div class="stat"><div class="stat-label">En cours</div><div class="stat-val s-progress">—</div></div>
+    <div class="stat"><div class="stat-label">Validées</div><div class="stat-val s-done">—</div></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="fbtn on" onclick="setFilter(this,'all')">Toutes</button>
+    <button class="fbtn" onclick="setFilter(this,'todo')">À faire</button>
+    <button class="fbtn" onclick="setFilter(this,'progress')">En cours</button>
+    <button class="fbtn" onclick="setFilter(this,'done')">Validées</button>
+    <button class="fbtn" onclick="setFilter(this,'high')">Priorité haute</button>
+    <input class="search" type="text" placeholder="Rechercher…" oninput="render()" id="search">
+    <button class="add-btn" onclick="openAdd('')">+ Nouvelle action</button>
+  </div>
+
+  <div id="list"><div class="loading"><span class="spinner"></span>Chargement…</div></div>
+</div>
+
+<div id="modal" style="display:none" class="overlay" onclick="if(event.target===this)closeModal()">
+<div class="modal">
+  <h3 id="modal-title">Ajouter une action</h3>
+  <label>Machine S/N</label>
+  <input type="text" id="m-sn" placeholder="ex: A60H 320768">
+  <label>Point de prélèvement</label>
+  <input type="text" id="m-point" placeholder="ex: Hydraulique">
+  <label>N° FA</label>
+  <input type="text" id="m-fa" placeholder="ex: FA0279378">
+  <label>Action à mener</label>
+  <textarea id="m-action" placeholder="Décrire l'action…"></textarea>
+  <label>Priorité</label>
+  <select id="m-prio">
+    <option value="high">Haute — intervention urgente</option>
+    <option value="med" selected>Moyenne — prochain intervalle</option>
+    <option value="low">Basse — surveillance</option>
+  </select>
+  <label>Sévérité</label>
+  <select id="m-sev">
+    <option value="ab">ANORMAL</option>
+    <option value="mo" selected>MONITOR</option>
+    <option value="ok">NORMAL</option>
+  </select>
+  <div class="modal-btns">
+    <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+    <button class="btn-save" onclick="saveAction()">Enregistrer</button>
+  </div>
+</div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://dfozzaboqedtecsyxrmy.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmb3p6YWJvcWVkdGVjc3l4cm15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NTExNDcsImV4cCI6MjA5NzMyNzE0N30.9KafvlOaVknQRO4O_gNe1L3m3V0KOFQLyuzVnBpUMls';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let actions = [], filter = 'all', editId = null;
+
+const sevLabel = s => ({ab:'ANORMAL',mo:'MONITOR',ok:'NORMAL'}[s]||s);
+const prioLabel = p => ({high:'Priorité haute',med:'Priorité moyenne',low:'Basse'}[p]||p);
+const statusLabel = s => ({todo:'À faire',progress:'En cours',done:'Validée'}[s]||s);
+
+async function loadActions() {
+  const { data, error } = await db.from('fa_actions').select('*').order('id');
+  if (error) { console.error(error); return; }
+  actions = data;
+  render();
+}
+
+function subscribeRealtime() {
+  db.channel('fa_actions_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'fa_actions' }, () => loadActions())
+    .subscribe();
+}
+
+function setFilter(btn, f) {
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on'); filter = f; render();
+}
+
+function filtered() {
+  const q = (document.getElementById('search')?.value || '').toLowerCase();
+  return actions.filter(a => {
+    if (filter === 'todo' && a.status !== 'todo') return false;
+    if (filter === 'progress' && a.status !== 'progress') return false;
+    if (filter === 'done' && a.status !== 'done') return false;
+    if (filter === 'high' && a.prio !== 'high') return false;
+    if (q && !`${a.sn} ${a.point} ${a.text} ${a.fa}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function grouped(list) {
+  const m = {};
+  list.forEach(a => { if (!m[a.sn]) m[a.sn] = []; m[a.sn].push(a); });
+  return m;
+}
+
+function renderStats() {
+  const todo = actions.filter(a => a.status === 'todo').length;
+  const prog = actions.filter(a => a.status === 'progress').length;
+  const done = actions.filter(a => a.status === 'done').length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-label">Total</div><div class="stat-val s-total">${actions.length}</div></div>
+    <div class="stat"><div class="stat-label">À faire</div><div class="stat-val s-todo">${todo}</div></div>
+    <div class="stat"><div class="stat-label">En cours</div><div class="stat-val s-progress">${prog}</div></div>
+    <div class="stat"><div class="stat-label">Validées</div><div class="stat-val s-done">${done}</div></div>`;
+}
+
+function render() {
+  renderStats();
+  const list = filtered();
+  const grp = grouped(list);
+  const snOrder = ['A60H 320768','A60H 320677','A60H 320815','A60H 320769','A60H 320647','L260H 4323','A60H 320110'];
+  const keys = [...snOrder.filter(k => grp[k]), ...Object.keys(grp).filter(k => !snOrder.includes(k))];
+  if (!keys.length) { document.getElementById('list').innerHTML = '<div class="empty">Aucune action correspondante</div>'; return; }
+
+  document.getElementById('list').innerHTML = keys.map(sn => {
+    const rows = grp[sn];
+    const done = rows.filter(a => a.status === 'done').length;
+    const pct = Math.round(done / rows.length * 100);
+    const worst = rows.find(a => a.sev === 'ab') ? 'ab' : rows.find(a => a.sev === 'mo') ? 'mo' : 'ok';
+    const sid = sn.replace(/\s/g,'_');
+    return `
+    <div class="machine-block" id="blk-${sid}">
+      <div class="machine-header" onclick="toggleBlock('${sid}')">
+        <span class="machine-sn">${sn}</span>
+        <span class="badge ${worst}">${sevLabel(worst)}</span>
+        <div class="prog-wrap">
+          <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+          <span class="prog-text">${done}/${rows.length} validées</span>
+        </div>
+        <span class="chevron">&#8964;</span>
+      </div>
+      <div class="actions-list">
+        ${rows.map(a => `
+        <div class="action-row ${a.status==='done'?'done':''}" id="row-${a.id}">
+          <div class="chk ${a.status==='done'?'checked':''}" onclick="toggleDone(${a.id})"></div>
+          <div class="action-body">
+            <div class="action-text">${a.text}</div>
+            <div class="action-meta">
+              <span class="chip">${a.point}</span>
+              <span class="chip">${a.fa}</span>
+              <span class="chip">${a.date}</span>
+              <span class="prio ${a.prio}">${prioLabel(a.prio)}</span>
+              ${a.status==='progress'?'<span class="badge mo">En cours</span>':''}
+            </div>
+            ${a.status==='done'&&a.done_at?`<div class="done-info">&#10003; Validée le ${a.done_at}</div>`:''}
+          </div>
+          <div class="action-btns">
+            ${a.status==='todo'?`<button class="vbtn progress-btn" onclick="setStatus(${a.id},'progress')">En cours</button>`:''}
+            ${a.status==='progress'?`<button class="vbtn" onclick="setStatus(${a.id},'done')">Valider</button>`:''}
+            ${a.status==='done'?`<button class="vbtn undo" onclick="setStatus(${a.id},'todo')">Annuler</button>`:''}
+            <button class="vbtn" onclick="openEdit(${a.id})" style="font-size:10px">&#9998;</button>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleBlock(id) { document.getElementById('blk-'+id)?.classList.toggle('collapsed'); }
+
+async function toggleDone(id) {
+  const a = actions.find(x => x.id === id);
+  if (!a) return;
+  const newStatus = a.status === 'done' ? 'todo' : 'done';
+  const doneAt = newStatus === 'done' ? new Date().toLocaleDateString('fr-FR') : null;
+  await db.from('fa_actions').update({ status: newStatus, done_at: doneAt }).eq('id', id);
+  toast(newStatus === 'done' ? 'Action validée ✓' : 'Action réouverte');
+}
+
+async function setStatus(id, status) {
+  const doneAt = status === 'done' ? new Date().toLocaleDateString('fr-FR') : null;
+  await db.from('fa_actions').update({ status, done_at: doneAt }).eq('id', id);
+  const labels = { todo:'Réouverte', progress:'En cours', done:'Validée ✓' };
+  toast(labels[status] || 'Mise à jour');
+}
+
+function openAdd(sn) {
+  editId = null;
+  document.getElementById('modal-title').textContent = 'Ajouter une action';
+  document.getElementById('m-sn').value = sn || '';
+  ['m-point','m-fa','m-action'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('m-prio').value = 'med';
+  document.getElementById('m-sev').value = 'mo';
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function openEdit(id) {
+  const a = actions.find(x => x.id === id);
+  if (!a) return;
+  editId = id;
+  document.getElementById('modal-title').textContent = "Modifier l'action";
+  document.getElementById('m-sn').value = a.sn;
+  document.getElementById('m-point').value = a.point || '';
+  document.getElementById('m-fa').value = a.fa || '';
+  document.getElementById('m-action').value = a.text;
+  document.getElementById('m-prio').value = a.prio || 'med';
+  document.getElementById('m-sev').value = a.sev || 'mo';
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+async function saveAction() {
+  const sn = document.getElementById('m-sn').value.trim();
+  const text = document.getElementById('m-action').value.trim();
+  if (!sn || !text) return;
+  const obj = {
+    sn, text,
+    point: document.getElementById('m-point').value.trim(),
+    fa: document.getElementById('m-fa').value.trim(),
+    prio: document.getElementById('m-prio').value,
+    sev: document.getElementById('m-sev').value,
+  };
+  if (editId) {
+    await db.from('fa_actions').update(obj).eq('id', editId);
+    toast('Action modifiée');
+  } else {
+    await db.from('fa_actions').insert({ ...obj, status: 'todo', date: new Date().toLocaleDateString('fr-FR') });
+    toast('Action ajoutée');
+  }
+  closeModal();
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+loadActions();
+subscribeRealtime();
+</script>
+</body>
+</html>
