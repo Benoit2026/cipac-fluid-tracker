@@ -16,29 +16,43 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* Header */
   .header { background: var(--navy); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px; }
   .header-logo { display: flex; align-items: center; gap: 12px; }
   .logo-mark svg { width: 32px; height: 32px; }
   .header-title { color: #fff; font-size: 15px; font-weight: 500; }
   .header-sub { color: rgba(255,255,255,0.55); font-size: 12px; }
   .header-bar { height: 3px; background: linear-gradient(90deg, var(--navy) 85%, var(--green) 85%); }
-  .live-badge { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; }
+  .live-badge { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: background .2s; }
+  .live-badge:hover { background: rgba(255,255,255,0.2); }
   .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  .live-dot.admin { background: #FFD700; animation: none; }
   @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
   .live-text { color: rgba(255,255,255,0.8); font-size: 11px; font-weight: 500; }
+
+  /* Admin badge */
+  .admin-badge { display: none; align-items: center; gap: 5px; background: rgba(255,215,0,0.2); border: 1px solid rgba(255,215,0,0.4); padding: 4px 10px; border-radius: 20px; margin-left: 8px; }
+  .admin-badge.visible { display: flex; }
+  .admin-badge span { color: #FFD700; font-size: 11px; font-weight: 500; }
+  .logout-btn { background: none; border: none; color: rgba(255,215,0,0.7); font-size: 12px; cursor: pointer; padding: 0 0 0 6px; }
+  .logout-btn:hover { color: #FFD700; }
+
   .container { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
   .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px; }
   .stat { background: var(--white); border-radius: 10px; border: 0.5px solid var(--border); padding: 12px 14px; }
   .stat-label { font-size: 11px; color: var(--text-sec); text-transform: uppercase; letter-spacing:.05em; margin-bottom: 4px; }
   .stat-val { font-size: 22px; font-weight: 500; }
-  .s-total{color:var(--navy)}.s-todo{color:var(--red)}.s-progress{color:var(--amber)}.s-done{color:var(--ok)}
+  .s-total{color:var(--navy)}.s-todo{color:var(--red)}.s-done{color:var(--ok)}
   .toolbar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
   .fbtn { padding: 6px 14px; border: 0.5px solid var(--border); border-radius: 20px; font-size: 12px; cursor: pointer; background: var(--white); color: var(--text-sec); transition: all .15s; }
   .fbtn.on { background: var(--navy); color: #fff; border-color: var(--navy); }
   .search { flex:1; min-width:160px; max-width:240px; padding:6px 12px; border:0.5px solid var(--border); border-radius:20px; font-size:12px; background:var(--white); color:var(--text); outline:none; }
+  .search:focus { border-color: var(--navy); }
   .add-btn { margin-left:auto; display:flex; align-items:center; gap:6px; padding:7px 16px; background:var(--navy); color:#fff; border:none; border-radius:20px; font-size:12px; font-weight:500; cursor:pointer; }
+
   .machine-block { background: var(--white); border-radius: 12px; border: 0.5px solid var(--border); margin-bottom: 12px; overflow: hidden; }
-  .machine-header { display:flex; align-items:center; gap:10px; padding:10px 16px; cursor:pointer; user-select:none; }
+  .machine-header { display:flex; align-items:center; gap:10px; padding:10px 16px; cursor:pointer; user-select:none; transition: background .15s; }
   .machine-header:hover { background: var(--navy-light); }
   .machine-sn { font-size:14px; font-weight:500; color:var(--navy); }
   .prog-wrap { display:flex; align-items:center; gap:8px; margin-left:auto; }
@@ -51,16 +65,31 @@
   .badge { display:inline-flex; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:500; }
   .badge.ab{background:var(--red-light);color:var(--red)}
   .badge.mo{background:var(--amber-light);color:var(--amber)}
-  .badge.ok{background:var(--ok-light);color:var(--ok)}
+  .badge.ok2{background:var(--ok-light);color:var(--ok)}
   .actions-list { border-top: 0.5px solid var(--border); }
   .action-row { display:flex; align-items:flex-start; gap:12px; padding:10px 16px; border-bottom:0.5px solid var(--border); transition:background .15s; }
   .action-row:last-child { border-bottom:none; }
   .action-row:hover { background:#FAFAF8; }
-  .action-row.done { opacity:.6; }
-  .chk { width:20px; height:20px; border:1.5px solid var(--border); border-radius:5px; flex-shrink:0; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; margin-top:1px; }
-  .chk:hover { border-color:var(--ok); }
-  .chk.checked { background:var(--ok); border-color:var(--ok); }
-  .chk.checked::after { content:''; display:block; width:5px; height:9px; border:2px solid #fff; border-top:none; border-left:none; transform:rotate(45deg) translate(-1px,-1px); }
+  .action-row.done { opacity:.55; }
+
+  /* Case à cocher */
+  .chk {
+    width: 24px; height: 24px;
+    border: 2px solid var(--border); border-radius: 6px;
+    flex-shrink: 0; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s; margin-top: 1px; background: var(--white);
+  }
+  .chk:hover:not(.locked) { border-color: var(--ok); background: var(--ok-light); transform: scale(1.05); }
+  .chk.checked { background: var(--ok); border-color: var(--ok); }
+  .chk.checked::after { content:''; display:block; width:6px; height:11px; border:2.5px solid #fff; border-top:none; border-left:none; transform:rotate(45deg) translate(-1px,-1px); }
+  /* Case verrouillée (validée, pas admin) */
+  .chk.locked { cursor: not-allowed; opacity: .7; }
+  .chk.locked:hover { border-color: var(--border); background: var(--white); transform: none; }
+  /* Case admin déverrouillée */
+  .chk.checked.admin-unlock { background: var(--ok); border-color: #FFD700; box-shadow: 0 0 0 2px rgba(255,215,0,0.3); }
+  .chk.checked.admin-unlock:hover { opacity: .85; }
+
   .action-body { flex:1; min-width:0; }
   .action-text { font-size:13px; color:var(--text); line-height:1.45; }
   .action-row.done .action-text { text-decoration:line-through; color:var(--text-sec); }
@@ -70,29 +99,37 @@
   .prio.high{background:var(--red-light);color:var(--red)}
   .prio.med{background:var(--amber-light);color:var(--amber)}
   .prio.low{background:var(--ok-light);color:var(--ok)}
-  .done-info { font-size:11px; color:var(--ok); margin-top:4px; }
-  .action-btns { display:flex; flex-direction:column; gap:4px; flex-shrink:0; }
-  .vbtn { padding:5px 12px; font-size:11px; font-weight:500; border:0.5px solid var(--border); border-radius:6px; cursor:pointer; background:var(--white); color:var(--text-sec); transition:all .15s; white-space:nowrap; }
-  .vbtn.v-progress:hover { background:var(--amber-light); border-color:var(--amber); color:var(--amber); }
-  .vbtn.v-done { background:var(--ok-light); border-color:var(--ok); color:var(--ok); font-weight:600; }
-  .vbtn.v-done:hover { background:#d4edda; }
-  .vbtn.v-undo:hover { background:var(--red-light); border-color:var(--red); color:var(--red); }
-  .vbtn.v-edit { font-size:10px; padding:3px 8px; }
-  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; z-index:100; padding:16px; }
-  .modal { background:var(--white); border-radius:14px; padding:20px; width:100%; max-width:400px; }
-  .modal h3 { font-size:15px; font-weight:500; color:var(--navy); margin-bottom:14px; }
+  .done-info { font-size:11px; color:var(--ok); margin-top:4px; display:flex; align-items:center; gap:4px; }
+  .edit-btn { padding:4px 8px; font-size:11px; border:0.5px solid var(--border); border-radius:6px; cursor:pointer; background:var(--white); color:var(--text-sec); transition:all .15s; flex-shrink:0; margin-top:1px; }
+  .edit-btn:hover { background: var(--navy-light); border-color: var(--navy); color: var(--navy); }
+
+  /* Modal PIN */
+  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; z-index:100; padding:16px; }
+  .modal { background:var(--white); border-radius:16px; padding:24px; width:100%; max-width:340px; text-align:center; }
+  .modal.form-modal { text-align:left; max-width:400px; max-height:90vh; overflow-y:auto; }
+  .modal h3 { font-size:15px; font-weight:500; color:var(--navy); margin-bottom:6px; }
+  .modal p { font-size:13px; color:var(--text-sec); margin-bottom:18px; }
+  .pin-dots { display:flex; justify-content:center; gap:12px; margin-bottom:20px; }
+  .pin-dot { width:14px; height:14px; border-radius:50%; background:var(--border); transition: background .15s; }
+  .pin-dot.filled { background: var(--navy); }
+  .pin-pad { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:240px; margin:0 auto 12px; }
+  .pin-key { padding:14px; font-size:18px; font-weight:500; border:0.5px solid var(--border); border-radius:10px; cursor:pointer; background:var(--white); color:var(--text); transition:all .15s; }
+  .pin-key:hover { background:var(--navy-light); border-color:var(--navy); }
+  .pin-key.del { font-size:14px; color:var(--red); }
+  .pin-key.del:hover { background:var(--red-light); border-color:var(--red); }
+  .pin-error { font-size:12px; color:var(--red); margin-top:8px; min-height:18px; }
   .modal label { font-size:12px; color:var(--text-sec); display:block; margin-bottom:3px; margin-top:10px; }
   .modal input,.modal select,.modal textarea { width:100%; padding:7px 10px; border:0.5px solid var(--border); border-radius:8px; font-size:13px; color:var(--text); outline:none; }
   .modal textarea { height:70px; resize:vertical; }
   .modal-btns { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
   .btn-cancel { padding:8px 16px; font-size:13px; border:0.5px solid var(--border); border-radius:8px; cursor:pointer; background:var(--white); color:var(--text-sec); }
   .btn-save { padding:8px 18px; font-size:13px; font-weight:500; border:none; border-radius:8px; cursor:pointer; background:var(--navy); color:#fff; }
-  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; padding:10px 20px; border-radius:20px; font-size:13px; font-weight:500; opacity:0; transition:opacity .3s; pointer-events:none; z-index:200; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; padding:10px 20px; border-radius:20px; font-size:13px; font-weight:500; opacity:0; transition:opacity .3s; pointer-events:none; z-index:200; white-space:nowrap; }
   .toast.show { opacity:1; }
   .loading { text-align:center; padding:3rem; color:var(--text-sec); }
   .spinner { display:inline-block; width:22px; height:22px; border:2px solid var(--border); border-top-color:var(--navy); border-radius:50%; animation:spin .7s linear infinite; margin-right:8px; vertical-align:middle; }
   @keyframes spin{to{transform:rotate(360deg)}}
-  @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}.prog-wrap{display:none}}
+  @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}.prog-wrap{display:none}.header-sub{display:none}}
 </style>
 </head>
 <body>
@@ -100,35 +137,31 @@
 <div class="header">
   <div class="header-logo">
     <div class="logo-mark">
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="16" height="40" rx="2" fill="#8CB414"/>
-        <rect x="20" width="20" height="40" rx="2" fill="white" opacity="0.9"/>
-        <polygon points="8,8 8,32 20,20" fill="white"/>
-      </svg>
+      <svg viewBox="0 0 40 40" fill="none"><rect width="16" height="40" rx="2" fill="#8CB414"/><rect x="20" width="20" height="40" rx="2" fill="white" opacity="0.9"/><polygon points="8,8 8,32 20,20" fill="white"/></svg>
     </div>
     <div>
       <div class="header-title">CIPAC Services</div>
       <div class="header-sub">Fluid Analysis — Suivi des actions</div>
     </div>
   </div>
-  <div class="live-badge">
-    <div class="live-dot"></div>
-    <span class="live-text">Temps réel</span>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="admin-badge" id="admin-badge">
+      <span>&#9733; Admin</span>
+      <button class="logout-btn" onclick="logout()" title="Quitter le mode admin">&#10005;</button>
+    </div>
+    <div class="live-badge" onclick="openPinModal()" title="Mode admin">
+      <div class="live-dot" id="live-dot"></div>
+      <span class="live-text" id="live-text">Temps réel</span>
+    </div>
   </div>
 </div>
 <div class="header-bar"></div>
 
 <div class="container">
-  <div class="stats" id="stats">
-    <div class="stat"><div class="stat-label">Total</div><div class="stat-val s-total">—</div></div>
-    <div class="stat"><div class="stat-label">À faire</div><div class="stat-val s-todo">—</div></div>
-    <div class="stat"><div class="stat-label">En cours</div><div class="stat-val s-progress">—</div></div>
-    <div class="stat"><div class="stat-label">Validées</div><div class="stat-val s-done">—</div></div>
-  </div>
+  <div class="stats" id="stats"></div>
   <div class="toolbar">
     <button class="fbtn on" onclick="setFilter(this,'all')">Toutes</button>
     <button class="fbtn" onclick="setFilter(this,'todo')">À faire</button>
-    <button class="fbtn" onclick="setFilter(this,'progress')">En cours</button>
     <button class="fbtn" onclick="setFilter(this,'done')">Validées</button>
     <button class="fbtn" onclick="setFilter(this,'high')">Priorité haute</button>
     <input class="search" type="text" placeholder="Rechercher…" oninput="render()" id="search">
@@ -137,8 +170,38 @@
   <div id="list"><div class="loading"><span class="spinner"></span>Chargement…</div></div>
 </div>
 
-<div id="modal" style="display:none" class="overlay" onclick="if(event.target===this)closeModal()">
+<!-- Modal PIN -->
+<div id="pin-modal" style="display:none" class="overlay" onclick="if(event.target===this)closePinModal()">
 <div class="modal">
+  <h3>&#128274; Mode administrateur</h3>
+  <p>Entrez votre PIN pour pouvoir annuler des validations</p>
+  <div class="pin-dots">
+    <div class="pin-dot" id="d0"></div>
+    <div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div>
+    <div class="pin-dot" id="d3"></div>
+  </div>
+  <div class="pin-pad">
+    <button class="pin-key" onclick="pinKey('1')">1</button>
+    <button class="pin-key" onclick="pinKey('2')">2</button>
+    <button class="pin-key" onclick="pinKey('3')">3</button>
+    <button class="pin-key" onclick="pinKey('4')">4</button>
+    <button class="pin-key" onclick="pinKey('5')">5</button>
+    <button class="pin-key" onclick="pinKey('6')">6</button>
+    <button class="pin-key" onclick="pinKey('7')">7</button>
+    <button class="pin-key" onclick="pinKey('8')">8</button>
+    <button class="pin-key" onclick="pinKey('9')">9</button>
+    <button class="pin-key del" onclick="pinDel()">&#9003;</button>
+    <button class="pin-key" onclick="pinKey('0')">0</button>
+    <button class="pin-key" onclick="closePinModal()" style="font-size:12px;color:var(--text-sec)">Annuler</button>
+  </div>
+  <div class="pin-error" id="pin-error"></div>
+</div>
+</div>
+
+<!-- Modal action -->
+<div id="modal" style="display:none" class="overlay" onclick="if(event.target===this)closeModal()">
+<div class="modal form-modal">
   <h3 id="modal-title">Ajouter une action</h3>
   <label>Machine S/N</label><input type="text" id="m-sn" placeholder="ex: A60H 320768">
   <label>Point de prélèvement</label><input type="text" id="m-point" placeholder="ex: Hydraulique">
@@ -166,63 +229,92 @@
 <div id="toast" class="toast"></div>
 
 <script>
-const URL  = 'https://dfozzaboqedtecsyxrmy.supabase.co';
-const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmb3p6YWJvcWVkdGVjc3l4cm15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NTExNDcsImV4cCI6MjA5NzMyNzE0N30.9KafvlOaVknQRO4O_gNe1L3m3V0KOFQLyuzVnBpUMls';
-const HEADERS = { 'Content-Type':'application/json', 'apikey': KEY, 'Authorization': 'Bearer '+KEY, 'Prefer': 'return=representation' };
+const SUPABASE_URL = 'https://dfozzaboqedtecsyxrmy.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmb3p6YWJvcWVkdGVjc3l4cm15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NTExNDcsImV4cCI6MjA5NzMyNzE0N30.9KafvlOaVknQRO4O_gNe1L3m3V0KOFQLyuzVnBpUMls';
+const HDR = {'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=representation'};
+const ADMIN_PIN = '2026';
 
-let actions=[], filter='all', editId=null;
+let actions=[], filter='all', editId=null, isAdmin=false, pinInput='';
 
 const sevLabel=s=>({ab:'ANORMAL',mo:'MONITOR',ok:'NORMAL'}[s]||s);
 const prioLabel=p=>({high:'Priorité haute',med:'Priorité moyenne',low:'Basse'}[p]||p);
 
-async function api(method, path, body){
-  const opts = { method, headers: HEADERS };
-  if(body) opts.body = JSON.stringify(body);
-  const r = await fetch(URL+'/rest/v1/'+path, opts);
-  if(!r.ok){ const e=await r.text(); console.error('API error',r.status,e); throw new Error(e); }
-  const txt = await r.text();
-  return txt ? JSON.parse(txt) : null;
+async function api(method,path,body){
+  const r=await fetch(SUPABASE_URL+'/rest/v1/'+path,{method,headers:HDR,body:body?JSON.stringify(body):undefined});
+  if(!r.ok){const e=await r.text();throw new Error(e);}
+  const t=await r.text();return t?JSON.parse(t):null;
 }
 
 async function load(){
-  try {
-    const data = await api('GET','fa_actions?select=*&order=id');
-    actions = data || [];
+  try{const d=await api('GET','fa_actions?select=*&order=id');actions=d||[];render();}
+  catch(e){document.getElementById('list').innerHTML='<div class="loading">Erreur: '+e.message+'</div>';}
+}
+
+// ── PIN Admin
+function openPinModal(){
+  if(isAdmin){logout();return;}
+  pinInput=''; updateDots();
+  document.getElementById('pin-error').textContent='';
+  document.getElementById('pin-modal').style.display='flex';
+}
+function closePinModal(){document.getElementById('pin-modal').style.display='none'; pinInput='';}
+function pinKey(k){
+  if(pinInput.length>=4)return;
+  pinInput+=k; updateDots();
+  if(pinInput.length===4) setTimeout(checkPin,150);
+}
+function pinDel(){if(pinInput.length>0){pinInput=pinInput.slice(0,-1);updateDots();}}
+function updateDots(){
+  for(let i=0;i<4;i++){
+    document.getElementById('d'+i).classList.toggle('filled',i<pinInput.length);
+  }
+}
+function checkPin(){
+  if(pinInput===ADMIN_PIN){
+    isAdmin=true;
+    closePinModal();
+    document.getElementById('admin-badge').classList.add('visible');
+    document.getElementById('live-dot').classList.add('admin');
+    document.getElementById('live-text').textContent='Admin';
+    toast('✓ Mode admin activé');
     render();
-  } catch(e){ document.getElementById('list').innerHTML='<div class="loading">Erreur de chargement — '+e.message+'</div>'; }
+  } else {
+    document.getElementById('pin-error').textContent='PIN incorrect — réessayez';
+    pinInput=''; updateDots();
+  }
+}
+function logout(){
+  isAdmin=false;
+  document.getElementById('admin-badge').classList.remove('visible');
+  document.getElementById('live-dot').classList.remove('admin');
+  document.getElementById('live-text').textContent='Temps réel';
+  toast('Mode admin désactivé');
+  render();
 }
 
-function subscribe(){
-  const es = new EventSource(URL+'/realtime/v1/api/broadcast?apikey='+KEY);
-  es.onerror = () => setTimeout(load, 3000);
-  setInterval(load, 10000);
-}
-
-function setFilter(btn,f){ document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); filter=f; render(); }
-
+// ── Filtres & rendu
+function setFilter(btn,f){document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');filter=f;render();}
 function filtered(){
   const q=(document.getElementById('search')?.value||'').toLowerCase();
   return actions.filter(a=>{
     if(filter==='todo'&&a.status!=='todo')return false;
-    if(filter==='progress'&&a.status!=='progress')return false;
     if(filter==='done'&&a.status!=='done')return false;
     if(filter==='high'&&a.prio!=='high')return false;
     if(q&&!`${a.sn} ${a.point} ${a.text} ${a.fa}`.toLowerCase().includes(q))return false;
     return true;
   });
 }
-
-function grouped(list){ const m={}; list.forEach(a=>{if(!m[a.sn])m[a.sn]=[];m[a.sn].push(a);}); return m; }
+function grouped(list){const m={};list.forEach(a=>{if(!m[a.sn])m[a.sn]=[];m[a.sn].push(a);});return m;}
 
 function renderStats(){
   const todo=actions.filter(a=>a.status==='todo').length;
-  const prog=actions.filter(a=>a.status==='progress').length;
   const done=actions.filter(a=>a.status==='done').length;
+  const pct=actions.length?Math.round(done/actions.length*100):0;
   document.getElementById('stats').innerHTML=`
     <div class="stat"><div class="stat-label">Total</div><div class="stat-val s-total">${actions.length}</div></div>
     <div class="stat"><div class="stat-label">À faire</div><div class="stat-val s-todo">${todo}</div></div>
-    <div class="stat"><div class="stat-label">En cours</div><div class="stat-val s-progress">${prog}</div></div>
-    <div class="stat"><div class="stat-label">Validées</div><div class="stat-val s-done">${done}</div></div>`;
+    <div class="stat"><div class="stat-label">Validées</div><div class="stat-val s-done">${done}</div></div>
+    <div class="stat"><div class="stat-label">Progression</div><div class="stat-val s-total">${pct}%</div></div>`;
 }
 
 function render(){
@@ -231,13 +323,15 @@ function render(){
   const snOrder=['A60H 320768','A60H 320677','A60H 320815','A60H 320769','A60H 320647','L260H 4323','A60H 320110'];
   const keys=[...snOrder.filter(k=>grp[k]),...Object.keys(grp).filter(k=>!snOrder.includes(k))];
   if(!keys.length){document.getElementById('list').innerHTML='<div class="loading">Aucune action</div>';return;}
+
   document.getElementById('list').innerHTML=keys.map(sn=>{
     const rows=grp[sn];
     const done=rows.filter(a=>a.status==='done').length;
     const pct=Math.round(done/rows.length*100);
     const worst=rows.find(a=>a.sev==='ab')?'ab':rows.find(a=>a.sev==='mo')?'mo':'ok';
     const sid=sn.replace(/\s/g,'_');
-    return `<div class="machine-block" id="blk-${sid}">
+    return `
+    <div class="machine-block" id="blk-${sid}">
       <div class="machine-header" onclick="toggleBlock('${sid}')">
         <span class="machine-sn">${sn}</span>
         <span class="badge ${worst}">${sevLabel(worst)}</span>
@@ -248,48 +342,52 @@ function render(){
         <span class="chevron">&#8964;</span>
       </div>
       <div class="actions-list">
-        ${rows.map(a=>`
-        <div class="action-row ${a.status==='done'?'done':''}" id="row-${a.id}">
-          <div class="chk ${a.status==='done'?'checked':''}" onclick="toggleDone(${a.id})"></div>
-          <div class="action-body">
-            <div class="action-text">${a.text}</div>
-            <div class="action-meta">
-              <span class="chip">${a.point||''}</span>
-              <span class="chip">${a.fa||''}</span>
-              <span class="chip">${a.date||''}</span>
-              <span class="prio ${a.prio||'med'}">${prioLabel(a.prio)}</span>
-              ${a.status==='progress'?'<span class="badge mo">En cours</span>':''}
+        ${rows.map(a=>{
+          const isDone = a.status==='done';
+          // Case verrouillée si validée ET pas admin
+          const locked = isDone && !isAdmin;
+          const chkClass = ['chk', isDone?'checked':'', locked?'locked':'', (isDone&&isAdmin)?'admin-unlock':''].filter(Boolean).join(' ');
+          const chkTitle = locked ? 'Seul l\'administrateur peut annuler une validation' : isDone ? 'Annuler la validation (admin)' : 'Valider cette action';
+          const chkClick = locked ? `showLockMsg()` : `toggleDone(${a.id})`;
+          return `
+          <div class="action-row ${isDone?'done':''}" id="row-${a.id}">
+            <div class="${chkClass}" onclick="${chkClick}" title="${chkTitle}" role="checkbox" aria-checked="${isDone}"></div>
+            <div class="action-body">
+              <div class="action-text">${a.text}</div>
+              <div class="action-meta">
+                <span class="chip">${a.point||''}</span>
+                <span class="chip">${a.fa||''}</span>
+                <span class="chip">${a.date||''}</span>
+                <span class="prio ${a.prio||'med'}">${prioLabel(a.prio)}</span>
+              </div>
+              ${isDone&&a.done_at?`<div class="done-info">&#10003; Validée le ${a.done_at}</div>`:''}
             </div>
-            ${a.status==='done'&&a.done_at?`<div class="done-info">✓ Validée le ${a.done_at}</div>`:''}
-          </div>
-          <div class="action-btns">
-            ${a.status==='todo'?`<button class="vbtn v-progress" onclick="setStatus(${a.id},'progress')">En cours</button>`:''}
-            ${a.status==='progress'?`<button class="vbtn v-done" onclick="setStatus(${a.id},'done')">✓ Valider</button>`:''}
-            ${a.status==='done'?`<button class="vbtn v-undo" onclick="setStatus(${a.id},'todo')">Annuler</button>`:''}
-            <button class="vbtn v-edit" onclick="openEdit(${a.id})">✏</button>
-          </div>
-        </div>`).join('')}
+            <button class="edit-btn" onclick="openEdit(${a.id})" title="Modifier">&#9998;</button>
+          </div>`;
+        }).join('')}
       </div>
     </div>`;
   }).join('');
 }
 
-function toggleBlock(id){ document.getElementById('blk-'+id)?.classList.toggle('collapsed'); }
+function toggleBlock(id){document.getElementById('blk-'+id)?.classList.toggle('collapsed');}
+
+function showLockMsg(){
+  toast('&#128274; Action verrouillée — mode admin requis');
+}
 
 async function toggleDone(id){
   const a=actions.find(x=>x.id===id); if(!a)return;
-  await setStatus(id, a.status==='done'?'todo':'done');
-}
-
-async function setStatus(id, status){
-  const doneAt = status==='done' ? new Date().toLocaleDateString('fr-FR') : null;
-  try {
-    await api('PATCH', `fa_actions?id=eq.${id}`, { status, done_at: doneAt });
-    const a=actions.find(x=>x.id===id);
-    if(a){ a.status=status; a.done_at=doneAt; }
+  // Si déjà validée, vérifier qu'on est admin
+  if(a.status==='done'&&!isAdmin){showLockMsg();return;}
+  const newStatus=a.status==='done'?'todo':'done';
+  const doneAt=newStatus==='done'?new Date().toLocaleDateString('fr-FR'):null;
+  try{
+    await api('PATCH',`fa_actions?id=eq.${id}`,{status:newStatus,done_at:doneAt});
+    a.status=newStatus; a.done_at=doneAt;
     render();
-    toast(status==='done'?'✓ Action validée':status==='progress'?'En cours':'Réouverte');
-  } catch(e){ toast('Erreur: '+e.message); }
+    toast(newStatus==='done'?'✓ Action validée':'Action réouverte');
+  }catch(e){toast('Erreur: '+e.message);}
 }
 
 function openAdd(sn){
@@ -301,7 +399,6 @@ function openAdd(sn){
   document.getElementById('m-sev').value='mo';
   document.getElementById('modal').style.display='flex';
 }
-
 function openEdit(id){
   const a=actions.find(x=>x.id===id); if(!a)return;
   editId=id;
@@ -314,30 +411,22 @@ function openEdit(id){
   document.getElementById('m-sev').value=a.sev||'mo';
   document.getElementById('modal').style.display='flex';
 }
-
-function closeModal(){ document.getElementById('modal').style.display='none'; }
-
+function closeModal(){document.getElementById('modal').style.display='none';}
 async function saveAction(){
   const sn=document.getElementById('m-sn').value.trim();
   const text=document.getElementById('m-action').value.trim();
   if(!sn||!text)return;
   const obj={sn,text,point:document.getElementById('m-point').value.trim(),fa:document.getElementById('m-fa').value.trim(),prio:document.getElementById('m-prio').value,sev:document.getElementById('m-sev').value};
-  try {
-    if(editId){
-      await api('PATCH',`fa_actions?id=eq.${editId}`,obj);
-      toast('Action modifiée');
-    } else {
-      await api('POST','fa_actions',{...obj,status:'todo',date:new Date().toLocaleDateString('fr-FR')});
-      toast('Action ajoutée');
-    }
+  try{
+    if(editId){await api('PATCH',`fa_actions?id=eq.${editId}`,obj);toast('Action modifiée');}
+    else{await api('POST','fa_actions',{...obj,status:'todo',date:new Date().toLocaleDateString('fr-FR')});toast('Action ajoutée');}
     closeModal(); load();
-  } catch(e){ toast('Erreur: '+e.message); }
+  }catch(e){toast('Erreur: '+e.message);}
 }
-
-function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 
 load();
-setInterval(load, 15000);
+setInterval(load,15000);
 </script>
 </body>
 </html>
