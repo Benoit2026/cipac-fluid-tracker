@@ -190,6 +190,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="admin-badge" id="admin-badge"><span>&#9733; Admin</span><button class="logout-btn" onclick="logout()">&#10005;</button></div>
     <div class="current-user" id="current-user-badge" style="display:none">
       <span class="current-user-name" id="current-user-name"></span>
+      <button onclick="logoutUser()" title="Se deconnecter" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:13px;padding:0 0 0 6px;line-height:1;" >&#10005;</button>
     </div>
     <div class="live-badge" onclick="openPinModal()"><div class="live-dot" id="live-dot"></div><span class="live-text" id="live-text">Temps reel</span></div>
   </div>
@@ -502,6 +503,30 @@ function initAuth() {
     document.getElementById('current-user-name').textContent=savedUser;
     loadAll();
   }
+}
+
+function logoutUser() {
+  if(!confirm('Se deconnecter ?')) return;
+  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_USER);
+  sessionStorage.removeItem('cipac_access');
+  sessionStorage.removeItem('cipac_is_admin');
+  currentUser=''; currentUserAccess=[]; isAdmin=false;
+  selectedUserIdx=-1; curClient=null;
+  // Réinitialiser l'écran de login
+  document.querySelectorAll('.user-btn').forEach(function(b){b.classList.remove('selected');});
+  document.getElementById('login-pwd').value='';
+  document.getElementById('login-pwd').classList.remove('visible');
+  document.getElementById('login-btn').classList.remove('visible');
+  document.getElementById('login-err').textContent='';
+  document.getElementById('current-user-badge').style.display='none';
+  document.getElementById('admin-badge').classList.remove('visible');
+  document.getElementById('live-dot').classList.remove('admin');
+  document.getElementById('live-text').textContent='Temps reel';
+  document.getElementById('home-page').style.display='block';
+  document.getElementById('client-page').classList.remove('active');
+  document.getElementById('back-btn').classList.remove('visible');
+  document.getElementById('login-screen').style.display='flex';
 }
 
 setInterval(function(){ if(sessionStorage.getItem(SESSION_KEY)==="1") loadAll(); },15000);
