@@ -33,6 +33,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .client-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;border-radius:14px 14px 0 0;}
 .client-card.prony::before{background:linear-gradient(90deg,var(--navy),var(--green));}
 .client-card.nmc::before{background:linear-gradient(90deg,var(--amber),var(--red));}
+.client-card.other::before{background:linear-gradient(90deg,#444441,#888780);}
 .client-logo-home{height:48px;max-width:130px;object-fit:contain;margin-bottom:12px;display:block;}
 .client-name{font-size:15px;font-weight:500;color:var(--text);margin-bottom:4px;}
 .client-machines{font-size:12px;color:var(--text-sec);margin-bottom:14px;}
@@ -169,7 +170,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="user-initial">FT</div>Frederick<br>TRAN
       </div>
       <div class="user-btn" id="ubtn-3" onclick="selectUser(3)">
-        <div class="user-initial">SS</div>Samantha<br>SUMU
+        <div class="user-initial" style="background:#002864;color:#FFD700;">AD</div>Admin<br>CIPAC
       </div>
     </div>
     <input class="login-input" type="password" id="login-pwd" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')checkLogin()">
@@ -218,6 +219,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div class="cstat"><div class="cstat-val cv-total" id="n-total">-</div><div class="cstat-label">Total</div></div>
           <div class="cstat"><div class="cstat-val cv-todo" id="n-todo">-</div><div class="cstat-label">A faire</div></div>
           <div class="cstat"><div class="cstat-val cv-done" id="n-done">-</div><div class="cstat-label">Validees</div></div>
+        </div>
+        <span class="arrow">&#8250;</span>
+      </div>
+      <div class="client-card other" onclick="openClient('other')" style="grid-column:1/-1;opacity:0.85;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:40px;height:40px;border-radius:8px;background:#444441;display:flex;align-items:center;justify-content:center;font-size:18px;">&#9888;</div>
+          <div>
+            <div class="client-name" style="margin-bottom:0">Client hors contrat</div>
+            <div class="client-machines">Machines non rattachees a un client</div>
+          </div>
+        </div>
+        <div class="client-stats">
+          <div class="cstat"><div class="cstat-val cv-total" id="o-total">-</div><div class="cstat-label">Total</div></div>
+          <div class="cstat"><div class="cstat-val cv-todo" id="o-todo">-</div><div class="cstat-label">A faire</div></div>
+          <div class="cstat"><div class="cstat-val cv-done" id="o-done">-</div><div class="cstat-label">Validees</div></div>
         </div>
         <span class="arrow">&#8250;</span>
       </div>
@@ -278,7 +294,11 @@ var SB_URL='https://dfozzaboqedtecsyxrmy.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmb3p6YWJvcWVkdGVjc3l4cm15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NTExNDcsImV4cCI6MjA5NzMyNzE0N30.9KafvlOaVknQRO4O_gNe1L3m3V0KOFQLyuzVnBpUMls';
 var HDR={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=representation'};
 var ADMIN_PIN='2026';
-var CLIENTS={prony:{name:'Prony Ressources',short:'Prony Ressources',sns:['320634','320642','320677','320647','320681','320688','320771','320769','320768','320812','320815']},nmc:{name:'Nickel Mining Company',short:'Nickel Mining Company',sns:['320159','320160','320153','320155','320161','320107','320110','320117','320120','52303','52309','322960','4323','4325','230072']}};
+var CLIENTS={
+  prony:{name:'Prony Ressources Nouvelle-Caledonie',short:'Prony Ressources',sns:['320634','320642','320677','320647','320681','320688','320771','320769','320768','320812','320815']},
+  nmc:{name:'Nickel Mining Company',short:'Nickel Mining Company',sns:['320159','320160','320153','320155','320161','320107','320110','320117','320120','52303','52309','322960','4323','4325','230072']},
+  other:{name:'Client hors contrat',short:'Hors contrat',sns:[]}
+};
 var allActions=[],filter='all',editId=null,commentId=null,isAdmin=false,pinInput='',curClient=null;
 function sevLabel(s){return {'ab':'ANORMAL','mo':'MONITOR','ok':'NORMAL'}[s]||s;}
 function prioLabel(p){return {'high':'Priorite haute','med':'Priorite moyenne','low':'Basse'}[p]||p;}
@@ -294,11 +314,19 @@ async function loadAll(){
   catch(e){console.error(e);}
 }
 function extractSN(sn){if(!sn)return'';var p=sn.trim().split(' ');return p[p.length-1];}
-function actionsFor(k){var sns=CLIENTS[k].sns;return allActions.filter(function(a){return sns.indexOf(extractSN(a.sn))>=0;});}
+function actionsFor(k){
+  if(k==='other'){
+    var allSns=CLIENTS.prony.sns.concat(CLIENTS.nmc.sns);
+    return allActions.filter(function(a){return allSns.indexOf(extractSN(a.sn))<0;});
+  }
+  var sns=CLIENTS[k].sns;
+  return allActions.filter(function(a){return sns.indexOf(extractSN(a.sn))>=0;});
+}
 function updateHomeStats(){
-  ['prony','nmc'].forEach(function(k){
+  var keyMap={prony:'p',nmc:'n',other:'o'};
+  ['prony','nmc','other'].forEach(function(k){
     var acts=actionsFor(k).filter(function(a){return !a.archived;});
-    var pre=k==='prony'?'p':'n';
+    var pre=keyMap[k];
     var t=document.getElementById(pre+'-total'),d=document.getElementById(pre+'-todo'),v=document.getElementById(pre+'-done');
     if(t)t.textContent=acts.length;
     if(d)d.textContent=acts.filter(function(a){return a.status==='todo';}).length;
@@ -307,15 +335,21 @@ function updateHomeStats(){
 }
 function goHome(){curClient=null;document.getElementById('home-page').style.display='block';document.getElementById('client-page').classList.remove('active');document.getElementById('back-btn').classList.remove('visible');document.getElementById('header-sub').textContent='Fluid Analysis - Suivi des actions';filter='all';}
 function openClient(k){
+  if(currentUserAccess.indexOf(k)<0){
+    toast('Acces non autorise pour ce client');
+    return;
+  }
   curClient=k;var c=CLIENTS[k];
   document.getElementById('home-page').style.display='none';
   document.getElementById('client-page').classList.add('active');
   document.getElementById('back-btn').classList.add('visible');
   document.getElementById('header-sub').textContent=c.short;
-  document.getElementById('client-logo-hdr').src=LOGOS[k];
+  var logo=LOGOS[k]||LOGOS.cipac;
+  document.getElementById('client-logo-hdr').src=logo;
   document.getElementById('client-logo-hdr').alt=c.short;
   document.getElementById('client-page-title').textContent=c.name;
-  document.getElementById('client-page-sub').textContent=c.sns.length+' machines';
+  var nbMachines=k==='other'?actionsFor('other').length:c.sns.length;
+  document.getElementById('client-page-sub').textContent=(k!=='other'?c.sns.length+' machines':'nbMachines actions');
   filter='all';
   document.querySelectorAll('.fbtn').forEach(function(b,i){b.classList.toggle('on',i===0);});
   render();
@@ -412,11 +446,12 @@ function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.c
 var SESSION_KEY = 'cipac_auth';
 var SESSION_USER = 'cipac_user';
 var USERS = [
-  {name:'Donald SOUOLOU',   initials:'DS', pwd:'Donald2026'},
-  {name:'Teophane MATHELON',initials:'TM', pwd:'Teophane2026'},
-  {name:'Frederick TRAN',   initials:'FT', pwd:'Frederick2026'},
-  {name:'Samantha SUMU',    initials:'SS', pwd:'Samantha2026'}
+  {name:'Donald SOUOLOU',    initials:'DS', pwd:'Donald2026',    access:['prony']},
+  {name:'Teophane MATHELON', initials:'TM', pwd:'Teophane2026',  access:['prony']},
+  {name:'Frederick TRAN',    initials:'FT', pwd:'Frederick2026', access:['nmc']},
+  {name:'Admin CIPAC',       initials:'AD', pwd:'VOLVOfluidConnect-CIPAC2026!', access:['prony','nmc','other'], isAdmin:true}
 ];
+var currentUserAccess = [];
 var selectedUserIdx = -1;
 var currentUser = '';
 
@@ -437,7 +472,11 @@ function checkLogin() {
   if(pwd === user.pwd) {
     sessionStorage.setItem(SESSION_KEY,'1');
     sessionStorage.setItem(SESSION_USER, user.name);
+    sessionStorage.setItem('cipac_access', JSON.stringify(user.access));
+    sessionStorage.setItem('cipac_is_admin', user.isAdmin?'1':'0');
     currentUser = user.name;
+    currentUserAccess = user.access;
+    if(user.isAdmin) isAdmin = true;
     document.getElementById('login-screen').style.display='none';
     document.getElementById('current-user-badge').style.display='flex';
     document.getElementById('current-user-name').textContent=user.name;
@@ -455,6 +494,9 @@ function initAuth() {
   var savedUser = sessionStorage.getItem(SESSION_USER);
   if(saved==='1' && savedUser) {
     currentUser = savedUser;
+    var savedAccess = sessionStorage.getItem('cipac_access');
+    currentUserAccess = savedAccess ? JSON.parse(savedAccess) : [];
+    if(sessionStorage.getItem('cipac_is_admin')==='1') isAdmin = true;
     document.getElementById('login-screen').style.display='none';
     document.getElementById('current-user-badge').style.display='flex';
     document.getElementById('current-user-name').textContent=savedUser;
