@@ -295,9 +295,37 @@ var SB_URL='https://dfozzaboqedtecsyxrmy.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmb3p6YWJvcWVkdGVjc3l4cm15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NTExNDcsImV4cCI6MjA5NzMyNzE0N30.9KafvlOaVknQRO4O_gNe1L3m3V0KOFQLyuzVnBpUMls';
 var HDR={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=representation'};
 var ADMIN_PIN='2026';
+var FLEET = {
+  '320634':'4100',
+  '320642':'4101',
+  '320677':'4102',
+  '320647':'4103',
+  '320681':'4104',
+  '320688':'4105',
+  '320771':'4106',
+  '320769':'4107',
+  '320768':'4108',
+  '320812':'4109',
+  '320815':'4110',
+  '320160':'D0820',
+  '320159':'D0821',
+  '320153':'D0822',
+  '320155':'D0823',
+  '320161':'D0824',
+  '320107':'D0889',
+  '320110':'D0890',
+  '320117':'D0891',
+  '320120':'D0892',
+  '52303':'DL170',
+  '52309':'DL218',
+  '322960':'DL227',
+  '4323':'C1015',
+  '4325':'C1016',
+  '230072':'O1000',
+};
 var CLIENTS={
-  prony:{name:'Prony Ressources Nouvelle-Caledonie',short:'Prony Ressources',sns:['320634','320642','320677','320647','320681','320688','320771','320769','320768','320812','320815']},
-  nmc:{name:'Nickel Mining Company',short:'Nickel Mining Company',sns:['320159','320160','320153','320155','320161','320107','320110','320117','320120','52303','52309','322960','4323','4325','230072']},
+  prony:{name:'Prony Ressources Nouvelle-Caledonie',short:'Prony Ressources',sns:['320634', '320642', '320677', '320647', '320681', '320688', '320771', '320769', '320768', '320812', '320815']},
+  nmc:{name:'Nickel Mining Company',short:'Nickel Mining Company',sns:['4323', '4325', '320160', '320159', '320153', '320155', '320161', '320107', '320110', '320117', '320120', '52303', '52309', '322960', '230072']},
   other:{name:'Client hors contrat',short:'Hors contrat',sns:[]}
 };
 var allActions=[],filter='all',editId=null,commentId=null,isAdmin=false,pinInput='',curClient=null;
@@ -378,11 +406,20 @@ function renderStats(){
   document.getElementById('stats').innerHTML='<div class="stat"><div class="stat-label">Total</div><div class="stat-val s-total">'+acts.length+'</div></div><div class="stat"><div class="stat-label">A faire</div><div class="stat-val s-todo">'+todo+'</div></div><div class="stat"><div class="stat-label">Validees</div><div class="stat-val s-done">'+done+'</div></div><div class="stat"><div class="stat-label">Progression</div><div class="stat-val s-total">'+pct+'%</div></div>';
   var ab=document.getElementById('archive-btn');if(ab)ab.classList.toggle('visible',isAdmin&&done>0&&filter!=='archived');
 }
+function getFleetLabel(sn){
+  var bare=extractSN(sn);
+  var fleet=FLEET[bare];
+  return fleet ? fleet+' - S/N '+bare : sn;
+}
 function render(){
   if(!curClient)return;
   renderStats();updateHomeStats();
   var list=filtered(),grp=grouped(list);
-  var keys=Object.keys(grp).sort(function(a,b){var wa=grp[a].find(function(x){return x.sev==='ab';})?0:grp[a].find(function(x){return x.sev==='mo';})?1:2;var wb=grp[b].find(function(x){return x.sev==='ab';})?0:grp[b].find(function(x){return x.sev==='mo';})?1:2;return wa-wb;});
+  var keys=Object.keys(grp).sort(function(a,b){
+    var fa=FLEET[extractSN(a)]||extractSN(a);
+    var fb=FLEET[extractSN(b)]||extractSN(b);
+    if(fa<fb) return -1; if(fa>fb) return 1; return 0;
+  });
   if(!keys.length){document.getElementById('list').innerHTML='<div class="loading">Aucune action pour ce client</div>';return;}
   var html=keys.map(function(sn){
     var rows=grp[sn];
@@ -403,7 +440,15 @@ function render(){
   }).join('');
   document.getElementById('list').innerHTML=html;
 }
-function toggleBlock(id){var el=document.getElementById('blk-'+id);if(el)el.classList.toggle('collapsed');}
+function toggleBlock(id){
+  var el=document.getElementById('blk-'+id);
+  if(el){
+    var list=el.querySelector('.actions-list');
+    var chev=el.querySelector('.chevron');
+    if(list){list.style.display=(list.style.display==='none')?'':'none';}
+    if(chev){chev.style.transform=(list&&list.style.display==='none')?'rotate(-90deg)':'';}
+  }
+}
 function showLockMsg(){toast('Action verrouillee - mode admin requis');}
 async function toggleDone(id){
   var a=allActions.find(function(x){return x.id===id;});if(!a)return;
@@ -429,7 +474,18 @@ async function archiveDone(){
 }
 function openComment(id){var a=allActions.find(function(x){return x.id===id;});if(!a)return;commentId=id;document.getElementById('comment-ctx').textContent='['+a.sn+'] '+a.text.substring(0,50);document.getElementById('comment-text').value=a.comment||'';document.getElementById('btn-del-comment').style.display=(a.comment&&a.comment.trim()!=='')?'block':'none';document.getElementById('comment-modal').style.display='flex';}
 function closeCommentModal(){document.getElementById('comment-modal').style.display='none';commentId=null;}
-async function saveComment(){if(!commentId)return;var txt=document.getElementById('comment-text').value.trim();try{await api('PATCH','fa_actions?id=eq.'+commentId,{comment:txt});var a=allActions.find(function(x){return x.id===commentId;});if(a)a.comment=txt;closeCommentModal();render();toast(txt?'Commentaire enregistre':'Supprime');}catch(e){toast('Erreur: '+e.message);}}
+async function saveComment(){
+  if(!commentId) return;
+  var txt=document.getElementById('comment-text').value.trim();
+  var fullComment = txt ? '['+currentUser+'] '+txt : '';
+  try{
+    await api('PATCH','fa_actions?id=eq.'+commentId,{comment:fullComment});
+    var a=allActions.find(function(x){return x.id===commentId;});
+    if(a) a.comment=fullComment;
+    closeCommentModal(); render();
+    toast(txt?'Commentaire enregistre':'Supprime');
+  }catch(e){toast('Erreur: '+e.message);}
+}
 async function deleteComment(){if(!commentId)return;try{await api('PATCH','fa_actions?id=eq.'+commentId,{comment:''});var a=allActions.find(function(x){return x.id===commentId;});if(a)a.comment='';closeCommentModal();render();toast('Commentaire supprime');}catch(e){toast('Erreur: '+e.message);}}
 function openPinModal(){if(isAdmin){logout();return;}pinInput='';updateDots();document.getElementById('pin-err').textContent='';document.getElementById('pin-modal').style.display='flex';}
 function closePinModal(){document.getElementById('pin-modal').style.display='none';pinInput='';}
