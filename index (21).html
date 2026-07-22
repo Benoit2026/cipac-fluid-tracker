@@ -586,6 +586,25 @@ function logoutUser() {
 }
 
 setInterval(function(){ if(sessionStorage.getItem(SESSION_KEY)==="1") loadAll(); },15000);
+
+// ── Ping Supabase toutes les 48h pour eviter la mise en pause automatique
+function pingSupabase() {
+  var lastPing = localStorage.getItem('supabase_last_ping');
+  var now = Date.now();
+  var INTERVAL = 48 * 60 * 60 * 1000;
+  if (!lastPing || (now - parseInt(lastPing)) > INTERVAL) {
+    fetch(SB_URL + '/rest/v1/fa_actions?select=id&limit=1', {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+    }).then(function() {
+      localStorage.setItem('supabase_last_ping', now.toString());
+      console.log('Supabase ping OK - ' + new Date().toLocaleString());
+    }).catch(function(e) {
+      console.log('Supabase ping failed:', e);
+    });
+  }
+}
+pingSupabase();
+setInterval(pingSupabase, 12 * 60 * 60 * 1000);
 </script>
 </body>
 </html>
